@@ -5,6 +5,7 @@
 
 class QFileDialog;
 class TableModel;
+class QAxObject;
 
 namespace Ui {
 class MainWindow;
@@ -34,10 +35,23 @@ private:
      * @brief 主拷贝函数
      */
     void            mainCopy();
+    /**
+     * @brief 判断文件是否有效
+     */
+    bool            assertFile(QString path);
     QFileDialog*    mFileDialog;
     TableModel      *mModel;
     QString         mSourceFilePath;
     QString         mTargetFilePath;
+
+    //excel操作
+    QAxObject*      mSrcWorkBook;
+    QAxObject*      mTargetWorkBook;
+    QAxObject*      mSrcSheet;
+    QAxObject*      mTargetSheet;
+    QAxObject*      mSrcRange;
+    QAxObject*      mTargetRange;
+
     Ui::MainWindow *ui;
 };
 
