@@ -6,7 +6,7 @@
 #include <tablemodel.h>
 #include <QMessageBox>
 
-//#define IS_DEBUG
+#define IS_DEBUG
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -217,18 +217,20 @@ MainWindow::write(QList<QList<QVariant>> &datas)
             targetDatas.push_back(rowData);
         }
 #ifdef IS_DEBUG
-        for (int k = 0; k < datas.size(); k++) {
+        for (int k = 0; k < targetDatas.size(); k++) {
             qDebug() << "row " << k << "*****************************";
-            for (int j = 0; j < datas.at(k).size(); j++) {
+            for (int j = 0; j < targetDatas.at(k).size(); j++) {
                 qDebug() << "index[" << j << "]=" << "["
-                         << datas.at(k).at(j).toString() << "]";
+                         << targetDatas.at(k).at(j).toString() << "]";
             }
         }
 #endif
         QString searchUnit = "";
         QString targetUnit = "";
+        QString ip, mask, gateway;
         int srcRows = datas.size();
         int targetRows = targetDatas.size();
+
         for (int srcCurRow = 0; srcCurRow < srcRows; srcCurRow++) {
             searchUnit = datas.at(srcCurRow).at(1).toString()
                     + datas.at(srcCurRow).at(2).toString();
@@ -239,12 +241,23 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                 if (targetUnit.length() < searchUnit.length())
                     continue;
                 if (searchUnit == targetUnit.mid(0, searchUnit.length())) {
-                    qDebug()<< "row=" << targetCurRow << ", "
-                            << "searchUnit=" << searchUnit
-                            << ", targetUnit=" << targetUnit;
+                        //已经拷贝过的，跳过
+                        qDebug()<<"srcRow=" << srcCurRow << ", "
+                                <<"targetrow=" << targetCurRow << ", "
+                                << "searchUnit=" << searchUnit
+                                << ", targetUnit=" << targetUnit;
+                        ip = datas.at(srcCurRow).at(9).toString();
+                        gateway = datas.at(srcCurRow).at(10).toString();
+                        mask = datas.at(srcCurRow).at(11).toString();
+                        mTargetSheet->querySubObject("Cells(int,int)", targetCurRow+1, 7+1)
+                                ->setProperty("Value", ip);
+                        mTargetSheet->querySubObject("Cells(int,int)", targetCurRow+1, 8+1)
+                                ->setProperty("Value", mask);
+                        mTargetSheet->querySubObject("Cells(int,int)", targetCurRow+1, 9+1)
+                                ->setProperty("Value", gateway);
+                        break;
                 }
             }
-            qDebug()<< searchUnit;
         }
     } else {
         QString errLog = "文件[" + mTargetFilePath + "] 为空!";
@@ -255,6 +268,7 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                               QMessageBox::Ok);
     }
 
+    mTargetWorkBook->dynamicCall("Save");
     mTargetWorkBook->dynamicCall("Close(Boolean)", false);              //关闭表
     targetExcel.dynamicCall("Quit(void)");                              //释放excel
 }
