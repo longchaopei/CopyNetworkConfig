@@ -19,6 +19,8 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    enum CopyStatus {COPY_SUCCESS, COPY_FAIL, COPY_UNKNOWN_ERR};
+
 private slots:
     void on_startBtn_clicked();
 
@@ -48,6 +50,12 @@ private:
      * @brief 判断文件是否有效
      */
     bool            assertFile(QString path);
+    QString         getCopyStatusStr(CopyStatus stat);
+    void            appendRow(QString action,
+                                QString stat,
+                                QString err);
+
+    int             curRow;
     QFileDialog*    mFileDialog;
     TableModel      *mModel;
     QString         mSourceFilePath;

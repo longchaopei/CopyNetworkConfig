@@ -8,6 +8,18 @@
 
 #define IS_DEBUG
 
+#define STATUS_SUCCESS_STR          "成功"
+#define STATUS_FAIL_STR             "失败"
+#define STATUS_UNKNOWN_STR          "未知"
+#define ACTION_READ_STR             "读取源文件数据"
+#define ACTION_START_COPY_STR       "开始拷贝配置"
+#define ACTION_STOP_COPY_STR        "拷贝配置结束"
+#define ERR_NOT_FOUND_STR(filestr) \
+    tr("目标文档没有找到[").append(filestr).append("]")
+
+#define GET_ACTION_COPY_FILE_STR(filestr)  \
+    tr("拷贝").append(filestr).append("配置")
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -17,6 +29,8 @@ MainWindow::MainWindow(QWidget *parent) :
     mFileDialog = new QFileDialog();
     mSourceFilePath = "";
     mTargetFilePath = "";
+    curRow = 0;
+//    qDebug() << GET_ACTION_COPY_FILE_STR("哈哈哈哈哈啊");
 }
 
 MainWindow::~MainWindow()
@@ -129,6 +143,7 @@ MainWindow::assertFile(QString path)
 void
 MainWindow::mainCopy()
 {
+    mModel->clear();
     QList<QList<QVariant>> srcDatas;
     setViewVisible(false);
     read(srcDatas);
@@ -163,6 +178,7 @@ MainWindow::read(QList<QList<QVariant>> &datas)
             //将每一行数据push到srcDatas里
             datas.push_back(rowData);
         }
+        appendRow(ACTION_READ_STR, STATUS_SUCCESS_STR, "");
 #ifdef IS_DEBUG
         for (int k = 0; k < datas.size(); k++) {
             qDebug() << "row " << k << "*****************************";
@@ -228,12 +244,15 @@ MainWindow::write(QList<QList<QVariant>> &datas)
         QString searchUnit = "";
         QString targetUnit = "";
         QString ip, mask, gateway;
+        bool isFound = false;
         int srcRows = datas.size();
         int targetRows = targetDatas.size();
 
+        appendRow(ACTION_START_COPY_STR, "", "");
         for (int srcCurRow = 0; srcCurRow < srcRows; srcCurRow++) {
             searchUnit = datas.at(srcCurRow).at(1).toString()
                     + datas.at(srcCurRow).at(2).toString();
+            isFound = false;
             for (int targetCurRow = 0;
                  targetCurRow < targetRows;
                  targetCurRow++) {
@@ -241,7 +260,7 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                 if (targetUnit.length() < searchUnit.length())
                     continue;
                 if (searchUnit == targetUnit.mid(0, searchUnit.length())) {
-                        //已经拷贝过的，跳过
+                        // 拷贝配置
                         qDebug()<<"srcRow=" << srcCurRow << ", "
                                 <<"targetrow=" << targetCurRow << ", "
                                 << "searchUnit=" << searchUnit
@@ -255,10 +274,19 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                                 ->setProperty("Value", mask);
                         mTargetSheet->querySubObject("Cells(int,int)", targetCurRow+1, 9+1)
                                 ->setProperty("Value", gateway);
+                        isFound = true;
+                        appendRow(GET_ACTION_COPY_FILE_STR(searchUnit),
+                                  STATUS_SUCCESS_STR,
+                                  "");
                         break;
                 }
             }
+            if (!isFound)
+                appendRow(GET_ACTION_COPY_FILE_STR(searchUnit),
+                          STATUS_FAIL_STR,
+                          ERR_NOT_FOUND_STR(searchUnit));
         }
+        appendRow(ACTION_STOP_COPY_STR, "", "");
     } else {
         QString errLog = "文件[" + mTargetFilePath + "] 为空!";
         QMessageBox::critical(this,
@@ -271,4 +299,40 @@ MainWindow::write(QList<QList<QVariant>> &datas)
     mTargetWorkBook->dynamicCall("Save");
     mTargetWorkBook->dynamicCall("Close(Boolean)", false);              //关闭表
     targetExcel.dynamicCall("Quit(void)");                              //释放excel
+}
+
+QString
+MainWindow::getCopyStatusStr(CopyStatus stat)
+{
+    switch (stat) {
+    case COPY_SUCCESS:
+        return STATUS_SUCCESS_STR;
+    case COPY_FAIL:
+        return STATUS_FAIL_STR;
+    default:
+        break;
+    }
+
+    return STATUS_UNKNOWN_STR;
+}
+
+void
+MainWindow::appendRow(QString action,
+                      QString stat,
+                      QString err)
+{
+    qDebug("appendRow");
+    QStandardItem* numItem
+            = new QStandardItem(QString::number(curRow++));
+    QStandardItem* actItem
+            = new QStandardItem(action);
+    QStandardItem* statItem
+            = new QStandardItem(stat);
+    QStandardItem* errItem
+            = new QStandardItem(err);
+
+    QList<QStandardItem*> items;
+    items << numItem << actItem << statItem << errItem;
+    mModel->appendRow(items);
+    qDebug("appendRow  end----------------------->>>>");
 }
