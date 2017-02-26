@@ -6,8 +6,9 @@
 #include <tablemodel.h>
 #include <QMessageBox>
 #include <statusdialog.h>
+#include <QTime>
 
-#define IS_DEBUG
+//#define IS_DEBUG
 
 #define STATUS_SUCCESS_STR          "成功"
 #define STATUS_FAIL_STR             "失败"
@@ -83,6 +84,7 @@ MainWindow::initView()
 void
 MainWindow::setViewVisible(bool isVisible)
 {
+    delaymsec(10);
     ui->srcFileToolBtn->setEnabled(isVisible);
     ui->targetFileToolBtn->setEnabled(isVisible);
     ui->startBtn->setEnabled(isVisible);
@@ -120,6 +122,7 @@ MainWindow::on_targetFileToolBtn_clicked()
 
 void MainWindow::on_startBtn_clicked()
 {
+    delaymsec(10);
     if (isStartCopy)
         return;
 
@@ -162,10 +165,12 @@ MainWindow::mainCopy()
     appendRow("开始任务", STATUS_SUCCESS_STR, "");
     setViewVisible(false);
     isStartCopy = true;
+    for (int i = 0; i < 100000000; i++);
     read(srcDatas);
     write(srcDatas);
     isStartCopy = false;
     setViewVisible(true);
+    appendRow("结束任务", STATUS_SUCCESS_STR, "");
 }
 
 void
@@ -339,6 +344,8 @@ MainWindow::appendRow(QString action,
                       QString stat,
                       QString err)
 {
+    qDebug() << "appendRow";
+    delaymsec(10);
     QStandardItem* numItem
             = new QStandardItem(QString::number(curRow++));
     QStandardItem* actItem
@@ -351,5 +358,27 @@ MainWindow::appendRow(QString action,
     QList<QStandardItem*> items;
     items << numItem << actItem << statItem << errItem;
     mModel->appendRow(items);
+    qDebug() << "appendRow end";
 //    emit appendRowSignal(action, stat, err);
+}
+
+void
+MainWindow::delaymsec(int msec)
+{
+#if 0
+    // 阻塞延时
+    QTime now;
+    QTime n=QTime::currentTime();
+
+    do{
+        now=QTime::currentTime();
+    } while (n.msecsTo(now) <= msec);
+#else
+    // 非阻塞延时
+    // 因为读写excel操作太占cpu，
+    // 加此延时函数，给其他代码可以处理，如之前不加延时时，界面更新会被阻塞
+    QTime dieTime = QTime::currentTime().addMSecs(msec);
+    while( QTime::currentTime() < dieTime )
+        QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+#endif
 }

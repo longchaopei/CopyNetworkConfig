@@ -61,6 +61,8 @@ private:
                                 QString stat,
                                 QString err);
 
+    void            delaymsec(int msec);
+
     int             curRow;
     bool            isStartCopy;
     QFileDialog*    mFileDialog;
