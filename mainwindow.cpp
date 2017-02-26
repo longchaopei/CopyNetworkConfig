@@ -5,6 +5,7 @@
 #include <QAxObject>
 #include <tablemodel.h>
 #include <QMessageBox>
+#include <statusdialog.h>
 
 #define IS_DEBUG
 
@@ -22,15 +23,19 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
+    curRow(0),
+    isStartCopy(false),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    mStatusDialog = new StatusDialog();
     initView();
     mFileDialog = new QFileDialog();
     mSourceFilePath = "";
     mTargetFilePath = "";
-    curRow = 0;
-//    qDebug() << GET_ACTION_COPY_FILE_STR("哈哈哈哈哈啊");
+
+    connect(this, SIGNAL(appendRowSignal(QString,QString,QString)),
+            mStatusDialog, SLOT(appendRow(QString,QString,QString)));
 }
 
 MainWindow::~MainWindow()
@@ -65,6 +70,11 @@ MainWindow::initView()
                 QAbstractItemView::SingleSelection);
 
     ui->logTableView->verticalHeader()->setVisible(false);              //隐藏行表头
+    ui->logTableView->horizontalHeader()->setStyleSheet(
+                "QHeaderView::section{"
+                "background-color:rgb(234, 234, 234)}");                //表头颜色
+
+    ui->logTableView->setAlternatingRowColors(true);
     ui->logTableView->setStyleSheet(
                 "QTableWidget{background-color:rgb(250, 250, 250);"
                 "alternate-background-color:rgb(255, 255, 224);}");     //设置间隔行颜色变化
@@ -110,6 +120,9 @@ MainWindow::on_targetFileToolBtn_clicked()
 
 void MainWindow::on_startBtn_clicked()
 {
+    if (isStartCopy)
+        return;
+
     if (mSourceFilePath == NULL ||
             mTargetFilePath == NULL) {
         qDebug("mainCopy, path is null.");
@@ -143,11 +156,15 @@ MainWindow::assertFile(QString path)
 void
 MainWindow::mainCopy()
 {
-    mModel->clear();
+//    mModel->clear();
+//    mStatusDialog->show();
     QList<QList<QVariant>> srcDatas;
+    appendRow("开始任务", STATUS_SUCCESS_STR, "");
     setViewVisible(false);
+    isStartCopy = true;
     read(srcDatas);
     write(srcDatas);
+    isStartCopy = false;
     setViewVisible(true);
 }
 
@@ -215,6 +232,7 @@ MainWindow::write(QList<QList<QVariant>> &datas)
 
     QAxObject targetExcel("Excel.Application");
     targetExcel.setProperty("Visible", false);                          //不显示文档
+    targetExcel.setProperty("DisplayAlerts", false);                   //关闭告警弹窗
     targetExcel.querySubObject("WorkBooks")
             ->dynamicCall("Open (const QString&)", mTargetFilePath);
     mTargetWorkBook = targetExcel.querySubObject("ActiveWorkBook");     //获取活动工作簿
@@ -296,7 +314,7 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                               QMessageBox::Ok);
     }
 
-    mTargetWorkBook->dynamicCall("Save");
+    mTargetWorkBook->dynamicCall("Save()");
     mTargetWorkBook->dynamicCall("Close(Boolean)", false);              //关闭表
     targetExcel.dynamicCall("Quit(void)");                              //释放excel
 }
@@ -321,7 +339,6 @@ MainWindow::appendRow(QString action,
                       QString stat,
                       QString err)
 {
-    qDebug("appendRow");
     QStandardItem* numItem
             = new QStandardItem(QString::number(curRow++));
     QStandardItem* actItem
@@ -334,5 +351,5 @@ MainWindow::appendRow(QString action,
     QList<QStandardItem*> items;
     items << numItem << actItem << statItem << errItem;
     mModel->appendRow(items);
-    qDebug("appendRow  end----------------------->>>>");
+//    emit appendRowSignal(action, stat, err);
 }

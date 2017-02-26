@@ -6,6 +6,7 @@
 class QFileDialog;
 class TableModel;
 class QAxObject;
+class StatusDialog;
 
 namespace Ui {
 class MainWindow;
@@ -20,6 +21,11 @@ public:
     ~MainWindow();
 
     enum CopyStatus {COPY_SUCCESS, COPY_FAIL, COPY_UNKNOWN_ERR};
+
+signals:
+    void            appendRowSignal(QString action,
+                                    QString stat,
+                                    QString err);
 
 private slots:
     void on_startBtn_clicked();
@@ -56,10 +62,12 @@ private:
                                 QString err);
 
     int             curRow;
+    bool            isStartCopy;
     QFileDialog*    mFileDialog;
     TableModel      *mModel;
     QString         mSourceFilePath;
     QString         mTargetFilePath;
+    StatusDialog*   mStatusDialog;
 
     //excel操作
     QAxObject*      mSrcWorkBook;

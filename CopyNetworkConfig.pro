@@ -14,9 +14,12 @@ TEMPLATE = app
 
 
 SOURCES += main.cpp\
-        mainwindow.cpp
+        mainwindow.cpp \
+    statusdialog.cpp
 
 HEADERS  += mainwindow.h \
-    tablemodel.h
+    tablemodel.h \
+    statusdialog.h
 
-FORMS    += mainwindow.ui
+FORMS    += mainwindow.ui \
+    statusdialog.ui
