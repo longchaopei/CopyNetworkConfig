@@ -136,10 +136,27 @@ MainWindow::mainCopy()
 //    QAxObject *srcWorkSheets = srcWorkBook->querySubObject("WorkSheets");   //获取所有表
 //    int sheet_count = work_sheets->property("Count").toInt();           //获取工作表数目
     mSrcSheet = mSrcWorkBook->querySubObject("Worksheets(int)", 1);     //获取第一个表
-    mSrcRange = mSrcSheet->querySubObject("Cells(int,int)", 1, 1);
-    qDebug() << mSrcRange->dynamicCall("Value2()").toString();
+//    mSrcRange = mSrcSheet->querySubObject("Cells(int,int)", 1, 1);
+//    qDebug() << mSrcRange->dynamicCall("Value2()").toString();
+
+    mSrcRange = mSrcSheet->querySubObject("UsedRange");
+    QVariant vars = mSrcRange->dynamicCall("Value");
+    QVariantList varRows = vars.toList();
+    if (!varRows.isEmpty()) {
+        int rowCount = varRows.size();
+        QVariantList rowData;
+        QList<QList<QVariant>> res;
+        for (int i = 0; i < rowCount; i++) {
+            rowData = varRows[i].toList();
+            res.push_back(rowData);
+        }
+
+        for (int j = 0; j < res.at(0).size(); j++) {
+            qDebug() << "index[" << j << "]=" << res.at(0).at(j).toString();
+        }
+    }
 
     // 释放资源
-    mSrcWorkBook->dynamicCall("Close(Boolean)", false );
+    mSrcWorkBook->dynamicCall("Close(Boolean)", false);
     srcExcel.dynamicCall("Quit(void)");
 }
