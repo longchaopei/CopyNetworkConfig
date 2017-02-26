@@ -6,6 +6,8 @@
 #include <tablemodel.h>
 #include <QMessageBox>
 
+//#define IS_DEBUG
+
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
@@ -52,6 +54,14 @@ MainWindow::initView()
     ui->logTableView->setStyleSheet(
                 "QTableWidget{background-color:rgb(250, 250, 250);"
                 "alternate-background-color:rgb(255, 255, 224);}");     //设置间隔行颜色变化
+}
+
+void
+MainWindow::setViewVisible(bool isVisible)
+{
+    ui->srcFileToolBtn->setEnabled(isVisible);
+    ui->targetFileToolBtn->setEnabled(isVisible);
+    ui->startBtn->setEnabled(isVisible);
 }
 
 void
@@ -119,44 +129,132 @@ MainWindow::assertFile(QString path)
 void
 MainWindow::mainCopy()
 {
+    QList<QList<QVariant>> srcDatas;
+    setViewVisible(false);
+    read(srcDatas);
+    write(srcDatas);
+    setViewVisible(true);
+}
+
+void
+MainWindow::read(QList<QList<QVariant>> &datas)
+{
     if (!assertFile(mSourceFilePath))
-        return;
-    if (!assertFile(mTargetFilePath))
         return;
 
     QAxObject srcExcel("Excel.Application");
-//    srcExcel.setProperty("Visible", true);                            //显示文档
     srcExcel.setProperty("Visible", false);                             //不显示文档
     srcExcel.querySubObject("WorkBooks")
             ->dynamicCall("Open (const QString&)", mSourceFilePath);
-    QVariant titleValue = srcExcel.property("Caption");                 //获取标题
-    qDebug() << QString("excel title : ") << titleValue;
-
     mSrcWorkBook = srcExcel.querySubObject("ActiveWorkBook");           //获取活动工作簿
-//    QAxObject *srcWorkSheets = srcWorkBook->querySubObject("WorkSheets");   //获取所有表
-//    int sheet_count = work_sheets->property("Count").toInt();           //获取工作表数目
     mSrcSheet = mSrcWorkBook->querySubObject("Worksheets(int)", 1);     //获取第一个表
-//    mSrcRange = mSrcSheet->querySubObject("Cells(int,int)", 1, 1);
-//    qDebug() << mSrcRange->dynamicCall("Value2()").toString();
-
     mSrcRange = mSrcSheet->querySubObject("UsedRange");
-    QVariant vars = mSrcRange->dynamicCall("Value");
+    QVariant vars = mSrcRange->dynamicCall("Value");                    //获取整表数据
+    mSrcWorkBook->dynamicCall("Close(Boolean)", false);                 //关闭表
+    srcExcel.dynamicCall("Quit(void)");                                 //释放excel
+
     QVariantList varRows = vars.toList();
+    QVariantList rowData;
     if (!varRows.isEmpty()) {
         int rowCount = varRows.size();
-        QVariantList rowData;
-        QList<QList<QVariant>> res;
+        datas.clear();
         for (int i = 0; i < rowCount; i++) {
             rowData = varRows[i].toList();
-            res.push_back(rowData);
+            //将每一行数据push到srcDatas里
+            datas.push_back(rowData);
         }
+#ifdef IS_DEBUG
+        for (int k = 0; k < datas.size(); k++) {
+            qDebug() << "row " << k << "*****************************";
+            for (int j = 0; j < datas.at(k).size(); j++) {
+                qDebug() << "index[" << j << "]=" << "["
+                         << datas.at(k).at(j).toString() << "]";
+            }
+        }
+#endif
+    } else {
+        QString errLog = "文件[" + mSourceFilePath + "] 为空!";
+        QMessageBox::critical(this,
+                              tr("出错"),
+                              errLog,
+                              QMessageBox::Ok,
+                              QMessageBox::Ok);
+    }
+}
 
-        for (int j = 0; j < res.at(0).size(); j++) {
-            qDebug() << "index[" << j << "]=" << res.at(0).at(j).toString();
+void
+MainWindow::write(QList<QList<QVariant>> &datas)
+{
+    if (!assertFile(mTargetFilePath))
+        return;
+
+    qDebug("\n\n\n\n--------------------write--------------------------------\n\n");
+
+    if (datas.isEmpty())
+        QMessageBox::critical(this,
+                              tr("出错"),
+                              tr("未知出错"),
+                              QMessageBox::Ok,
+                              QMessageBox::Ok);
+
+    QAxObject targetExcel("Excel.Application");
+    targetExcel.setProperty("Visible", false);                          //不显示文档
+    targetExcel.querySubObject("WorkBooks")
+            ->dynamicCall("Open (const QString&)", mTargetFilePath);
+    mTargetWorkBook = targetExcel.querySubObject("ActiveWorkBook");     //获取活动工作簿
+    mTargetSheet = mTargetWorkBook->querySubObject("Worksheets(int)", 1);   //获取第一个表
+    mTargetRange = mTargetSheet->querySubObject("UsedRange");
+    QVariant targetVars = mTargetRange->dynamicCall("Value");           //获取整表数据
+
+    QVariantList varRows = targetVars.toList();
+    QVariantList rowData;
+    QList<QList<QVariant>> targetDatas;
+    if (!varRows.isEmpty()) {
+        int rowCount = varRows.size();
+        for (int i = 0; i < rowCount; i++) {
+            rowData = varRows[i].toList();
+            //将每一行数据push到srcDatas里
+            targetDatas.push_back(rowData);
         }
+#ifdef IS_DEBUG
+        for (int k = 0; k < datas.size(); k++) {
+            qDebug() << "row " << k << "*****************************";
+            for (int j = 0; j < datas.at(k).size(); j++) {
+                qDebug() << "index[" << j << "]=" << "["
+                         << datas.at(k).at(j).toString() << "]";
+            }
+        }
+#endif
+        QString searchUnit = "";
+        QString targetUnit = "";
+        int srcRows = datas.size();
+        int targetRows = targetDatas.size();
+        for (int srcCurRow = 0; srcCurRow < srcRows; srcCurRow++) {
+            searchUnit = datas.at(srcCurRow).at(1).toString()
+                    + datas.at(srcCurRow).at(2).toString();
+            for (int targetCurRow = 0;
+                 targetCurRow < targetRows;
+                 targetCurRow++) {
+                targetUnit = targetDatas.at(targetCurRow).at(3).toString();
+                if (targetUnit.length() < searchUnit.length())
+                    continue;
+                if (searchUnit == targetUnit.mid(0, searchUnit.length())) {
+                    qDebug()<< "row=" << targetCurRow << ", "
+                            << "searchUnit=" << searchUnit
+                            << ", targetUnit=" << targetUnit;
+                }
+            }
+            qDebug()<< searchUnit;
+        }
+    } else {
+        QString errLog = "文件[" + mTargetFilePath + "] 为空!";
+        QMessageBox::critical(this,
+                              tr("出错"),
+                              errLog,
+                              QMessageBox::Ok,
+                              QMessageBox::Ok);
     }
 
-    // 释放资源
-    mSrcWorkBook->dynamicCall("Close(Boolean)", false);
-    srcExcel.dynamicCall("Quit(void)");
+    mTargetWorkBook->dynamicCall("Close(Boolean)", false);              //关闭表
+    targetExcel.dynamicCall("Quit(void)");                              //释放excel
 }

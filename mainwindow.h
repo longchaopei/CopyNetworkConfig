@@ -31,10 +31,19 @@ private:
      * @brief 初始化界面
      */
     void            initView();
+    void            setViewVisible(bool isVisible);
     /**
      * @brief 主拷贝函数
      */
     void            mainCopy();
+    /**
+     * @brief 读excel
+     */
+    void            read(QList<QList<QVariant>> &datas);
+    /**
+     * @brief 写excel
+     */
+    void            write(QList<QList<QVariant>> &datas);
     /**
      * @brief 判断文件是否有效
      */
