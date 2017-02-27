@@ -199,12 +199,12 @@ MainWindow::mainCopy()
                               errLog,
                               QMessageBox::Ok,
                               QMessageBox::Ok);
-        return;
+    } else {
+        write(srcDatas);
     }
-    write(srcDatas);
+    appendRow("结束任务", STATUS_SUCCESS_STR, "");
     isStartCopy = false;
     setViewVisible(true);
-    appendRow("结束任务", STATUS_SUCCESS_STR, "");
 }
 
 bool MainWindow::initSrcColumns(QList<QList<QVariant>> &datas)
