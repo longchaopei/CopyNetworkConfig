@@ -39,6 +39,7 @@ private:
      * @brief 初始化界面
      */
     void            initView();
+    void            clearTableView();
     void            setViewVisible(bool isVisible);
     /**
      * @brief 主拷贝函数

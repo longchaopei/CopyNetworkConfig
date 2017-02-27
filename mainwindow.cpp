@@ -36,7 +36,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
-    curRow(0),
+    curRow(1),
     isStartCopy(false),
     ui(new Ui::MainWindow)
 {
@@ -91,6 +91,19 @@ MainWindow::initView()
     ui->logTableView->setStyleSheet(
                 "QTableWidget{background-color:rgb(250, 250, 250);"
                 "alternate-background-color:rgb(255, 255, 224);}");     //设置间隔行颜色变化
+}
+
+void
+MainWindow::clearTableView()
+{
+    mModel->clear();
+    QStringList headerList;
+    headerList << "序号" << "动作" << "状态" << "错误信息";
+    mModel->setHorizontalHeaderLabels(headerList);
+    // 行宽
+    ui->logTableView->setColumnWidth(1, 300);
+    ui->logTableView->setColumnWidth(3, 300);
+    curRow = 1;
 }
 
 void
@@ -171,8 +184,8 @@ MainWindow::assertFile(QString path)
 void
 MainWindow::mainCopy()
 {
-//    mModel->clear();
 //    mStatusDialog->show();
+    clearTableView();
     QList<QList<QVariant>> srcDatas;
     appendRow("开始任务", STATUS_SUCCESS_STR, "");
     setViewVisible(false);
