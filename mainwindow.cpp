@@ -358,6 +358,7 @@ MainWindow::appendRow(QString action,
     QList<QStandardItem*> items;
     items << numItem << actItem << statItem << errItem;
     mModel->appendRow(items);
+    ui->logTableView->scrollToBottom();                                 //每插入一条，滚动到底部
     qDebug() << "appendRow end";
 //    emit appendRowSignal(action, stat, err);
 }
