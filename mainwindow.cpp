@@ -5,7 +5,7 @@
 #include <QAxObject>
 #include <tablemodel.h>
 #include <QMessageBox>
-#include <statusdialog.h>
+#include <helpdialog.h>
 #include <QTime>
 
 //#define IS_DEBUG
@@ -41,14 +41,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
-    mStatusDialog = new StatusDialog();
+    mHelpDialog = new HelpDialog();
+    mHelpDialog->exec();
     initView();
     mFileDialog = new QFileDialog();
     mSourceFilePath = "";
     mTargetFilePath = "";
 
     connect(this, SIGNAL(appendRowSignal(QString,QString,QString)),
-            mStatusDialog, SLOT(appendRow(QString,QString,QString)));
+            mHelpDialog, SLOT(appendRow(QString,QString,QString)));
 }
 
 MainWindow::~MainWindow()
@@ -184,7 +185,6 @@ MainWindow::assertFile(QString path)
 void
 MainWindow::mainCopy()
 {
-//    mStatusDialog->show();
     clearTableView();
     QList<QList<QVariant>> srcDatas;
     appendRow("开始任务", STATUS_SUCCESS_STR, "");

@@ -15,11 +15,14 @@ TEMPLATE = app
 
 SOURCES += main.cpp\
         mainwindow.cpp \
-    statusdialog.cpp
+    helpdialog.cpp
 
 HEADERS  += mainwindow.h \
     tablemodel.h \
-    statusdialog.h
+    helpdialog.h
 
 FORMS    += mainwindow.ui \
-    statusdialog.ui
+    helpdialog.ui
+
+RESOURCES += \
+    icon.qrc

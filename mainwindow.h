@@ -6,7 +6,7 @@
 class QFileDialog;
 class TableModel;
 class QAxObject;
-class StatusDialog;
+class HelpDialog;
 
 namespace Ui {
 class MainWindow;
@@ -72,7 +72,7 @@ private:
     TableModel      *mModel;
     QString         mSourceFilePath;
     QString         mTargetFilePath;
-    StatusDialog*   mStatusDialog;
+    HelpDialog*     mHelpDialog;
     int             mSrcTownShipColumn;
     int             mSrcVillageColumn;
     int             mSrcIpAddrColumn;
