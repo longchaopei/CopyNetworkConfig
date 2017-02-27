@@ -41,15 +41,12 @@ MainWindow::MainWindow(QWidget *parent) :
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    this->setWindowTitle("CopyNetworkConfig");
     mHelpDialog = new HelpDialog();
-    mHelpDialog->exec();
     initView();
     mFileDialog = new QFileDialog();
     mSourceFilePath = "";
     mTargetFilePath = "";
-
-    connect(this, SIGNAL(appendRowSignal(QString,QString,QString)),
-            mHelpDialog, SLOT(appendRow(QString,QString,QString)));
 }
 
 MainWindow::~MainWindow()
@@ -480,4 +477,10 @@ MainWindow::delaymsec(int msec)
     while( QTime::currentTime() < dieTime )
         QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
 #endif
+}
+
+void MainWindow::on_actHelp_triggered()
+{
+    if (!isStartCopy)
+        mHelpDialog->exec();
 }

@@ -34,6 +34,8 @@ private slots:
 
     void on_targetFileToolBtn_clicked();
 
+    void on_actHelp_triggered();
+
 private:
     /**
      * @brief 初始化界面
