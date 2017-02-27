@@ -56,11 +56,13 @@ private:
      * @brief 判断文件是否有效
      */
     bool            assertFile(QString path);
+
     QString         getCopyStatusStr(CopyStatus stat);
     void            appendRow(QString action,
                                 QString stat,
                                 QString err);
-
+    bool            initSrcColumns(QList<QList<QVariant>> &datas);
+    bool            initTargetColumns(QList<QList<QVariant>> &datas);
     void            delaymsec(int msec);
 
     int             curRow;
@@ -70,6 +72,18 @@ private:
     QString         mSourceFilePath;
     QString         mTargetFilePath;
     StatusDialog*   mStatusDialog;
+    int             mSrcTownShipColumn;
+    int             mSrcVillageColumn;
+    int             mSrcIpAddrColumn;
+    int             mSrcNetmaskColumn;
+    int             mSrcGatewayColumn;
+    int             mZoningNameColumn;
+    int             mZoningCodeColumn;
+    int             mTargetIpAddrColumn;
+    int             mTargetNetmaskColumn;
+    int             mTargetGatewayColumn;
+    const static int mHeaderRow = 0;
+
 
     //excel操作
     QAxObject*      mSrcWorkBook;

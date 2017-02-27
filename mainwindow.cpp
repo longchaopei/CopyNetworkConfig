@@ -10,6 +10,18 @@
 
 //#define IS_DEBUG
 
+#define HEADER_STR_SRC_TOWNSHIP         "乡镇"
+#define HEADER_STR_SRC_VILLAEG          "站点名称"
+#define HEADER_STR_SRC_IP_ADDR          "地址"
+#define HEADER_STR_SRC_GATEWAY          "网关"
+#define HEADER_STR_SRC_NETMASK          "掩码"
+
+#define HEADER_STR_TARGET_ZONING_NAME   "区划名称"
+#define HEADER_STR_TARGET_ZONING_CODE   "区划代码"
+#define HEADER_STR_TARGET_IP_ADDR       "村路由器IP地址"
+#define HEADER_STR_TARGET_GATEWAY       "村路由器网关"
+#define HEADER_STR_TARGET_NETMASK       "村路由器IP掩码"
+
 #define STATUS_SUCCESS_STR          "成功"
 #define STATUS_FAIL_STR             "失败"
 #define STATUS_UNKNOWN_STR          "未知"
@@ -167,10 +179,73 @@ MainWindow::mainCopy()
     isStartCopy = true;
     for (int i = 0; i < 100000000; i++);
     read(srcDatas);
+    if (!initSrcColumns(srcDatas)) {
+        QString errLog = "文件[" + mSourceFilePath + "] 表头格式错误";
+        QMessageBox::critical(this,
+                              tr("出错"),
+                              errLog,
+                              QMessageBox::Ok,
+                              QMessageBox::Ok);
+        return;
+    }
     write(srcDatas);
     isStartCopy = false;
     setViewVisible(true);
     appendRow("结束任务", STATUS_SUCCESS_STR, "");
+}
+
+bool MainWindow::initSrcColumns(QList<QList<QVariant>> &datas)
+{
+    mSrcTownShipColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_SRC_TOWNSHIP);
+    mSrcVillageColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_SRC_VILLAEG);
+    mSrcIpAddrColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_SRC_IP_ADDR);
+    mSrcGatewayColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_SRC_GATEWAY);
+    mSrcNetmaskColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_SRC_NETMASK);
+    if (mSrcTownShipColumn < 0 ||
+            mSrcVillageColumn < 0 ||
+            mSrcIpAddrColumn < 0 ||
+            mSrcGatewayColumn < 0 ||
+            mSrcNetmaskColumn < 0) {
+        return false;
+    }
+
+    qDebug() << "mSrcTownShipColumn = " << mSrcTownShipColumn << ", "
+             << "mSrcVillageColumn = " << mSrcVillageColumn << ", "
+             << "mSrcIpAddrColumn = " << mSrcIpAddrColumn << ", "
+             << "mSrcGatewayColumn = " << mSrcGatewayColumn << ", "
+             << "mSrcNetmaskColumn = " << mSrcNetmaskColumn;
+
+    return true;
+}
+
+bool MainWindow::initTargetColumns(QList<QList<QVariant>> &datas)
+{
+    mZoningNameColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_TARGET_ZONING_NAME);
+    mTargetIpAddrColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_TARGET_IP_ADDR);
+    mTargetGatewayColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_TARGET_GATEWAY);
+    mTargetNetmaskColumn =
+            datas.at(mHeaderRow).indexOf(HEADER_STR_TARGET_NETMASK);
+    if (mZoningNameColumn < 0 ||
+            mTargetIpAddrColumn < 0 ||
+            mTargetGatewayColumn < 0 ||
+            mTargetNetmaskColumn < 0) {
+        return false;
+    }
+
+    qDebug() << "mZoningNameColumn = " << mZoningNameColumn << ", "
+             << "mTargetIpAddrColumn = " << mTargetIpAddrColumn << ", "
+             << "mTargetGatewayColumn = " << mTargetGatewayColumn << ", "
+             << "mTargetNetmaskColumn = " << mTargetNetmaskColumn;
+
+    return true;
 }
 
 void
@@ -255,6 +330,15 @@ MainWindow::write(QList<QList<QVariant>> &datas)
             //将每一行数据push到srcDatas里
             targetDatas.push_back(rowData);
         }
+        if (!initTargetColumns(targetDatas)) {
+            QString errLog = "文件[" + mTargetFilePath + "] 表头格式错误";
+            QMessageBox::critical(this,
+                                  tr("出错"),
+                                  errLog,
+                                  QMessageBox::Ok,
+                                  QMessageBox::Ok);
+            return;
+        }
 #ifdef IS_DEBUG
         for (int k = 0; k < targetDatas.size(); k++) {
             qDebug() << "row " << k << "*****************************";
@@ -273,13 +357,13 @@ MainWindow::write(QList<QList<QVariant>> &datas)
 
         appendRow(ACTION_START_COPY_STR, "", "");
         for (int srcCurRow = 0; srcCurRow < srcRows; srcCurRow++) {
-            searchUnit = datas.at(srcCurRow).at(1).toString()
-                    + datas.at(srcCurRow).at(2).toString();
+            searchUnit = datas.at(srcCurRow).at(mSrcTownShipColumn).toString()
+                    + datas.at(srcCurRow).at(mSrcVillageColumn).toString();
             isFound = false;
             for (int targetCurRow = 0;
                  targetCurRow < targetRows;
                  targetCurRow++) {
-                targetUnit = targetDatas.at(targetCurRow).at(3).toString();
+                targetUnit = targetDatas.at(targetCurRow).at(mZoningNameColumn).toString();
                 if (targetUnit.length() < searchUnit.length())
                     continue;
                 if (searchUnit == targetUnit.mid(0, searchUnit.length())) {
@@ -288,15 +372,18 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                                 <<"targetrow=" << targetCurRow << ", "
                                 << "searchUnit=" << searchUnit
                                 << ", targetUnit=" << targetUnit;
-                        ip = datas.at(srcCurRow).at(9).toString();
-                        gateway = datas.at(srcCurRow).at(10).toString();
-                        mask = datas.at(srcCurRow).at(11).toString();
-                        mTargetSheet->querySubObject("Cells(int,int)", targetCurRow+1, 7+1)
-                                ->setProperty("Value", ip);
-                        mTargetSheet->querySubObject("Cells(int,int)", targetCurRow+1, 8+1)
-                                ->setProperty("Value", mask);
-                        mTargetSheet->querySubObject("Cells(int,int)", targetCurRow+1, 9+1)
-                                ->setProperty("Value", gateway);
+                        ip = datas.at(srcCurRow).at(mSrcIpAddrColumn).toString();
+                        gateway = datas.at(srcCurRow).at(mSrcGatewayColumn).toString();
+                        mask = datas.at(srcCurRow).at(mSrcNetmaskColumn).toString();
+                        mTargetSheet->querySubObject("Cells(int,int)",
+                                                     targetCurRow+1,
+                                                     mTargetIpAddrColumn+1)->setProperty("Value", ip);
+                        mTargetSheet->querySubObject("Cells(int,int)",
+                                                     targetCurRow+1,
+                                                     mTargetNetmaskColumn+1)->setProperty("Value", mask);
+                        mTargetSheet->querySubObject("Cells(int,int)",
+                                                     targetCurRow+1,
+                                                     mTargetGatewayColumn+1)->setProperty("Value", gateway);
                         isFound = true;
                         appendRow(GET_ACTION_COPY_FILE_STR(searchUnit),
                                   STATUS_SUCCESS_STR,
@@ -344,7 +431,6 @@ MainWindow::appendRow(QString action,
                       QString stat,
                       QString err)
 {
-    qDebug() << "appendRow";
     delaymsec(10);
     QStandardItem* numItem
             = new QStandardItem(QString::number(curRow++));
@@ -359,7 +445,6 @@ MainWindow::appendRow(QString action,
     items << numItem << actItem << statItem << errItem;
     mModel->appendRow(items);
     ui->logTableView->scrollToBottom();                                 //每插入一条，滚动到底部
-    qDebug() << "appendRow end";
 //    emit appendRowSignal(action, stat, err);
 }
 
