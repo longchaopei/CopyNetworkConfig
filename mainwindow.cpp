@@ -6,6 +6,7 @@
 #include <tablemodel.h>
 #include <QMessageBox>
 #include <helpdialog.h>
+#include <versiondialog.h>
 #include <QTime>
 
 //#define IS_DEBUG
@@ -38,15 +39,16 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     curRow(1),
     isStartCopy(false),
+    mVersionDialog(new VersionDialog()),
+    mHelpDialog(new HelpDialog()),
+    mFileDialog(new QFileDialog()),
+    mSourceFilePath(""),
+    mTargetFilePath(""),
     ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     this->setWindowTitle("CopyNetworkConfig");
-    mHelpDialog = new HelpDialog();
     initView();
-    mFileDialog = new QFileDialog();
-    mSourceFilePath = "";
-    mTargetFilePath = "";
 }
 
 MainWindow::~MainWindow()
@@ -455,7 +457,6 @@ MainWindow::appendRow(QString action,
     items << numItem << actItem << statItem << errItem;
     mModel->appendRow(items);
     ui->logTableView->scrollToBottom();                                 //每插入一条，滚动到底部
-//    emit appendRowSignal(action, stat, err);
 }
 
 void
@@ -483,4 +484,10 @@ void MainWindow::on_actHelp_triggered()
 {
     if (!isStartCopy)
         mHelpDialog->exec();
+}
+
+void MainWindow::on_actAbout_triggered()
+{
+    if (!isStartCopy)
+        mVersionDialog->exec();
 }

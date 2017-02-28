@@ -159,9 +159,10 @@
    </property>
    <widget class="QMenu" name="menu">
     <property name="title">
-     <string>使用须知</string>
+     <string>关于</string>
     </property>
     <addaction name="actHelp"/>
+    <addaction name="actAbout"/>
    </widget>
    <addaction name="menu"/>
   </widget>
@@ -177,6 +178,11 @@
   <action name="actHelp">
    <property name="text">
     <string>使用须知</string>
+   </property>
+  </action>
+  <action name="actAbout">
+   <property name="text">
+    <string>关于</string>
    </property>
   </action>
  </widget>

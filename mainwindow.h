@@ -7,6 +7,7 @@ class QFileDialog;
 class TableModel;
 class QAxObject;
 class HelpDialog;
+class VersionDialog;
 
 namespace Ui {
 class MainWindow;
@@ -35,6 +36,8 @@ private slots:
     void on_targetFileToolBtn_clicked();
 
     void on_actHelp_triggered();
+
+    void on_actAbout_triggered();
 
 private:
     /**
@@ -68,13 +71,16 @@ private:
     bool            initTargetColumns(QList<QList<QVariant>> &datas);
     void            delaymsec(int msec);
 
-    int             curRow;
-    bool            isStartCopy;
     QFileDialog*    mFileDialog;
-    TableModel      *mModel;
+    TableModel*     mModel;
+    HelpDialog*     mHelpDialog;
+    VersionDialog*  mVersionDialog;
+
     QString         mSourceFilePath;
     QString         mTargetFilePath;
-    HelpDialog*     mHelpDialog;
+
+    int             curRow;
+    bool            isStartCopy;
     int             mSrcTownShipColumn;
     int             mSrcVillageColumn;
     int             mSrcIpAddrColumn;
@@ -86,7 +92,6 @@ private:
     int             mTargetNetmaskColumn;
     int             mTargetGatewayColumn;
     const static int mHeaderRow = 0;
-
 
     //excel操作
     QAxObject*      mSrcWorkBook;
