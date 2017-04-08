@@ -19,9 +19,6 @@ CoverInfoDialog::CoverInfoDialog(QWidget *parent) :
 
     connect((QObject*)ui->beforeCoverTableview->verticalScrollBar(), SIGNAL(valueChanged(int)),
             (QObject*)ui->afterCoverTableview->verticalScrollBar(), SLOT(setValue(int)));
-
-//    connect((CoverInfoDialog*)ui->beforeCoverTableview->verticalScrollBar(), SIGNAL(sliderMoved(int)),
-//            this, SLOT(updateVerticalScrollBar(int)));
 }
 
 CoverInfoDialog::~CoverInfoDialog()
@@ -47,7 +44,7 @@ CoverInfoDialog::initBeforeTableview()
 {
     //设置首行标题
     QStringList headerList;
-    headerList << "编号" << "区划名称" << "区划代码" << "IP地址" << "IP网关" << "IP掩码";
+    headerList << "编号" << "区划名称" << "区划代码" << "IP地址" << "IP掩码" << "IP网关";
 
     mBeforeModel = new TableModel(0, headerList.size());
     ui->beforeCoverTableview->setModel(mBeforeModel);

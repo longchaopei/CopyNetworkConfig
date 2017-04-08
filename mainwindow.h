@@ -78,6 +78,7 @@ private:
     bool            initTargetColumns(QList<QList<QVariant>> &datas);
     void            delaymsec(int msec);
     bool            getWorkSheetData(QString path, QList<QList<QVariant>> &datas);
+    void            closeEvent(QCloseEvent *event);
 
     QFileDialog*    mFileDialog;
     TableModel*     mModel;

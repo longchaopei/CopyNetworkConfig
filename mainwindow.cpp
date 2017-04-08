@@ -567,3 +567,14 @@ MainWindow::on_lookupInfoBtn_clicked()
 {
     emit openCoverDialogSignal();
 }
+
+void
+MainWindow::closeEvent(QCloseEvent *event)
+{
+    if (isStartCopy) {
+        QMessageBox::warning(this, tr("温馨提示"),
+                             tr("正在拷贝信息，此时关闭可能会造成数据丢失！"),
+                             QMessageBox::Ok,
+                             QMessageBox::Ok);
+    }
+}

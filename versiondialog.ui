@@ -29,7 +29,7 @@
          <string notr="true">font: 14pt &quot;Microsoft YaHei UI&quot;;</string>
         </property>
         <property name="text">
-         <string>CopyNetworConfig v0.01</string>
+         <string>CopyNetworConfig v0.02</string>
         </property>
         <property name="alignment">
          <set>Qt::AlignCenter</set>
