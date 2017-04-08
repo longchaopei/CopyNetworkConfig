@@ -95,6 +95,9 @@ MainWindow::initView()
     ui->logTableView->setSelectionMode(
                 QAbstractItemView::SingleSelection);
 
+    ui->logTableView->horizontalHeader()
+            ->setSectionResizeMode(3, QHeaderView::Stretch);
+
     ui->logTableView->verticalHeader()->setVisible(false);              //隐藏行表头
     ui->logTableView->horizontalHeader()->setStyleSheet(
                 "QHeaderView::section{"
@@ -128,6 +131,7 @@ MainWindow::setViewVisible(bool isVisible)
     ui->startBtn->setEnabled(isVisible);
     ui->countryNameRB->setEnabled(isVisible);
     ui->zoningCodeRB->setEnabled(isVisible);
+    ui->lookupInfoBtn->setEnabled(isVisible);
 }
 
 void
@@ -280,10 +284,11 @@ bool MainWindow::initTargetColumns(QList<QList<QVariant>> &datas)
     if (ui->zoningCodeRB->isChecked()) {
         mTargetZoningCodeColumn = datas.at(mHeaderRow)
                 .indexOf(HEADER_STR_TARGET_ZONING_CODE);
-        if (mTargetZoningCodeColumn < 0)
+        if (mTargetZoningCodeColumn < 0) {
             return false;
-    } else {
-        qDebug() << "mTargetZoningCodeColumn = " << mTargetZoningCodeColumn;
+        } else {
+            qDebug() << "mTargetZoningCodeColumn = " << mTargetZoningCodeColumn;
+        }
     }
 
     qDebug() << "mTargetZoningNameColumn = " << mTargetZoningNameColumn << ", "
@@ -341,6 +346,12 @@ MainWindow::read(QList<QList<QVariant>> &datas)
     }
 }
 
+bool
+MainWindow::getWorkSheetData(QString path, QList<QList<QVariant>> &datas)
+{
+
+}
+
 void
 MainWindow::write(QList<QList<QVariant>> &datas)
 {
@@ -350,11 +361,8 @@ MainWindow::write(QList<QList<QVariant>> &datas)
     qDebug("\n\n\n\n--------------------write--------------------------------\n\n");
 
     if (datas.isEmpty())
-        QMessageBox::critical(this,
-                              tr("出错"),
-                              tr("未知出错"),
-                              QMessageBox::Ok,
-                              QMessageBox::Ok);
+        QMessageBox::critical(this, tr("出错"), tr("未知出错"),
+                              QMessageBox::Ok, QMessageBox::Ok);
 
     QAxObject targetExcel("Excel.Application");
     targetExcel.setProperty("Visible", false);                          //不显示文档
@@ -404,11 +412,13 @@ MainWindow::write(QList<QList<QVariant>> &datas)
         bool isFound = false;
         int srcRows = datas.size();
         int targetRows = targetDatas.size();
-        int srcSearchColumn = ui->zoningCodeRB->isChecked() ? mSrcZoningCodeColumn : -1;
-        int targetSearchColumn = ui->zoningCodeRB->isChecked() ? mTargetZoningCodeColumn : mTargetZoningNameColumn;
+        int srcSearchColumn = ui->zoningCodeRB->isChecked() ?
+                    mSrcZoningCodeColumn : -1;
+        int targetSearchColumn = ui->zoningCodeRB->isChecked() ?
+                    mTargetZoningCodeColumn : mTargetZoningNameColumn;
 
         appendRow(ACTION_START_COPY_STR, "", "");
-        for (int srcCurRow = 0; srcCurRow < srcRows; srcCurRow++) {
+        for (int srcCurRow = 1; srcCurRow < srcRows; srcCurRow++) {
             if (ui->zoningCodeRB->isChecked())
                 searchUnit = datas.at(srcCurRow).at(srcSearchColumn).toString();
             else
@@ -416,14 +426,12 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                         + datas.at(srcCurRow).at(mSrcVillageColumn).toString();
 
             isFound = false;
-            for (int targetCurRow = 0;
-                 targetCurRow < targetRows;
-                 targetCurRow++) {
+            for (int targetCurRow = 0; targetCurRow < targetRows; targetCurRow++) {
                 targetUnit = targetDatas.at(targetCurRow).at(targetSearchColumn).toString();
-                targetIp = targetDatas.at(targetCurRow).at(mTargetIpAddrColumn+1).toString();
-                targetNetmask = targetDatas.at(targetCurRow).at(mTargetNetmaskColumn+1).toString();
-                targetGateWay = targetDatas.at(targetCurRow).at(mTargetGatewayColumn+1).toString();
-                if (targetUnit.length() < searchUnit.length())
+                targetIp = targetDatas.at(targetCurRow).at(mTargetIpAddrColumn).toString();
+                targetNetmask = targetDatas.at(targetCurRow).at(mTargetNetmaskColumn).toString();
+                targetGateWay = targetDatas.at(targetCurRow).at(mTargetGatewayColumn).toString();
+                if (targetUnit.length() < searchUnit.length() || searchUnit == "")
                     continue;
                 if (searchUnit == targetUnit.mid(0, searchUnit.length())) {
                         // 拷贝配置
@@ -431,15 +439,17 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                                 <<"targetrow=" << targetCurRow << ", "
                                 << "searchUnit=" << searchUnit
                                 << ", targetUnit=" << targetUnit;
+
                         ip = datas.at(srcCurRow).at(mSrcIpAddrColumn).toString();
                         gateway = datas.at(srcCurRow).at(mSrcGatewayColumn).toString();
                         mask = datas.at(srcCurRow).at(mSrcNetmaskColumn).toString();
 
-                        if (targetIp != "" || targetNetmask != "" || targetGateWay != "") {
+                        if (targetIp != ip || targetNetmask != mask || targetGateWay != gateway) {
                             before.countryName = after.countryName
                                     = targetDatas.at(targetCurRow).at(mTargetZoningNameColumn).toString();
                             before.zoningCode = after.zoningCode
-                                    = targetDatas.at(targetCurRow).at(mTargetZoningCodeColumn).toString();
+                                    = ui->zoningCodeRB->isChecked() ?
+                                        targetDatas.at(targetCurRow).at(mTargetZoningCodeColumn).toString() : "";
                             after.ipAddr = ip;
                             after.netmask = mask;
                             after.gateWay = gateway;
@@ -473,11 +483,7 @@ MainWindow::write(QList<QList<QVariant>> &datas)
         appendRow(ACTION_STOP_COPY_STR, "", "");
     } else {
         QString errLog = "文件[" + mTargetFilePath + "] 为空!";
-        QMessageBox::critical(this,
-                              tr("出错"),
-                              errLog,
-                              QMessageBox::Ok,
-                              QMessageBox::Ok);
+        QMessageBox::critical(this, tr("出错"), errLog, QMessageBox::Ok, QMessageBox::Ok);
     }
 
     mTargetWorkBook->dynamicCall("Save()");
@@ -489,12 +495,12 @@ QString
 MainWindow::getCopyStatusStr(CopyStatus stat)
 {
     switch (stat) {
-    case COPY_SUCCESS:
-        return STATUS_SUCCESS_STR;
-    case COPY_FAIL:
-        return STATUS_FAIL_STR;
-    default:
-        break;
+        case COPY_SUCCESS:
+            return STATUS_SUCCESS_STR;
+        case COPY_FAIL:
+            return STATUS_FAIL_STR;
+        default:
+            break;
     }
 
     return STATUS_UNKNOWN_STR;

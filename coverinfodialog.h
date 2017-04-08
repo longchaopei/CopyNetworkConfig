@@ -23,6 +23,7 @@ private slots:
     void    appendRow(const COUNTRY_INFO before, const COUNTRY_INFO after);
     void    clearTable();
     void    openWindow();
+    void    updateVerticalScrollBar(int value);
 
 private:
     void    initView();

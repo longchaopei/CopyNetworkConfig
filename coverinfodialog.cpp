@@ -14,12 +14,25 @@ CoverInfoDialog::CoverInfoDialog(QWidget *parent) :
 {
     ui->setupUi(this);
     this->setWindowTitle("查看覆盖信息");
+    this->setWindowFlags(Qt::WindowMinMaxButtonsHint | Qt::WindowCloseButtonHint);
     initView();
+
+    connect((QObject*)ui->beforeCoverTableview->verticalScrollBar(), SIGNAL(valueChanged(int)),
+            (QObject*)ui->afterCoverTableview->verticalScrollBar(), SLOT(setValue(int)));
+
+//    connect((CoverInfoDialog*)ui->beforeCoverTableview->verticalScrollBar(), SIGNAL(sliderMoved(int)),
+//            this, SLOT(updateVerticalScrollBar(int)));
 }
 
 CoverInfoDialog::~CoverInfoDialog()
 {
     delete ui;
+}
+
+void
+CoverInfoDialog::updateVerticalScrollBar(int value)
+{
+    ALOGD("%s enter, value = %d\n",  __FUNCTION__, value);
 }
 
 void
@@ -61,6 +74,13 @@ CoverInfoDialog::initBeforeTableview()
     ui->beforeCoverTableview->setStyleSheet(
                 "QTableWidget{background-color:rgb(250, 250, 250);"
                 "alternate-background-color:rgb(255, 255, 224);}");     //设置间隔行颜色变化
+
+    ui->beforeCoverTableview->setColumnWidth(0, 100);
+    ui->beforeCoverTableview->setColumnWidth(1, 200);
+    ui->beforeCoverTableview->setColumnWidth(2, 150);
+    ui->beforeCoverTableview->setColumnWidth(3, 150);
+    ui->beforeCoverTableview->setColumnWidth(4, 150);
+    ui->beforeCoverTableview->setColumnWidth(5, 150);
 }
 
 void
@@ -96,6 +116,12 @@ CoverInfoDialog::initAfterTableview()
                 "QTableWidget{background-color:rgb(250, 250, 250);"
                 "alternate-background-color:rgb(255, 255, 224);}");     //设置间隔行颜色变化
 
+    ui->afterCoverTableview->setColumnWidth(0, 100);
+    ui->afterCoverTableview->setColumnWidth(1, 200);
+    ui->afterCoverTableview->setColumnWidth(2, 150);
+    ui->afterCoverTableview->setColumnWidth(3, 150);
+    ui->afterCoverTableview->setColumnWidth(4, 150);
+    ui->afterCoverTableview->setColumnWidth(5, 150);
 }
 
 void
@@ -106,6 +132,8 @@ CoverInfoDialog::clearTable()
 
     if (mAfterModel->rowCount() > 0)
         mAfterModel->removeRows(0, mAfterModel->rowCount());
+
+    mRowCount = 0;
 }
 
 void
@@ -117,6 +145,7 @@ CoverInfoDialog::openWindow()
 void
 CoverInfoDialog::appendRow(const COUNTRY_INFO before, const COUNTRY_INFO after)
 {
+    mRowCount++;
     beforeTableAppendRow(before);
     afterTableAppendRow(after);
 }
@@ -124,6 +153,17 @@ CoverInfoDialog::appendRow(const COUNTRY_INFO before, const COUNTRY_INFO after)
 void
 CoverInfoDialog::beforeTableAppendRow(const COUNTRY_INFO before)
 {
+    ALOGD("before zoningname = %s,"
+          "zoningcode = %s,"
+          "ip = %s,"
+          "netmask = %s,"
+          "gateway = %s",
+          before.countryName.toStdString().data(),
+          before.zoningCode.toStdString().data(),
+          before.ipAddr.toStdString().data(),
+          before.netmask.toStdString().data(),
+          before.gateWay.toStdString().data());
+
     QList<QStandardItem*> items;
     initItems(items, before);
     mBeforeModel->appendRow(items);
@@ -132,6 +172,17 @@ CoverInfoDialog::beforeTableAppendRow(const COUNTRY_INFO before)
 void
 CoverInfoDialog::afterTableAppendRow(const COUNTRY_INFO after)
 {
+    ALOGD("after zoningname = %s,"
+          "zoningcode = %s,"
+          "ip = %s,"
+          "netmask = %s,"
+          "gateway = %s",
+          after.countryName.toStdString().data(),
+          after.zoningCode.toStdString().data(),
+          after.ipAddr.toStdString().data(),
+          after.netmask.toStdString().data(),
+          after.gateWay.toStdString().data());
+
     QList<QStandardItem*> items;
     initItems(items, after);
     mAfterModel->appendRow(items);
@@ -140,9 +191,7 @@ CoverInfoDialog::afterTableAppendRow(const COUNTRY_INFO after)
 bool
 CoverInfoDialog::initItems(QList<QStandardItem*> &items, const COUNTRY_INFO info)
 {
-
-    ALOGD("%s enter", __FUNCTION__);
-    QStandardItem* number = new QStandardItem(QString::number(++mRowCount));
+    QStandardItem* number = new QStandardItem(QString::number(mRowCount));
     QStandardItem* name = new QStandardItem(info.countryName);
     QStandardItem* code = new QStandardItem(info.zoningCode);
     QStandardItem* ip = new QStandardItem(info.ipAddr);
