@@ -119,6 +119,8 @@ MainWindow::clearTableView()
     // 行宽
     ui->logTableView->setColumnWidth(1, 300);
     ui->logTableView->setColumnWidth(3, 300);
+    ui->logTableView->horizontalHeader()
+            ->setSectionResizeMode(3, QHeaderView::Stretch);
     curRow = 1;
 }
 
@@ -434,7 +436,6 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                 if (targetUnit.length() < searchUnit.length() || searchUnit == "")
                     continue;
                 if (searchUnit == targetUnit.mid(0, searchUnit.length())) {
-                        // 拷贝配置
                         qDebug()<<"srcRow=" << srcCurRow << ", "
                                 <<"targetrow=" << targetCurRow << ", "
                                 << "searchUnit=" << searchUnit
@@ -445,6 +446,7 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                         mask = datas.at(srcCurRow).at(mSrcNetmaskColumn).toString();
 
                         if (targetIp != ip || targetNetmask != mask || targetGateWay != gateway) {
+                            // 追加至覆盖信息表里
                             before.countryName = after.countryName
                                     = targetDatas.at(targetCurRow).at(mTargetZoningNameColumn).toString();
                             before.zoningCode = after.zoningCode
@@ -457,21 +459,22 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                             before.netmask = targetNetmask;
                             before.gateWay = targetGateWay;
                             emit coverInfoTableAppendRow(before, after);
-                        }
 
-                        mTargetSheet->querySubObject("Cells(int,int)",
-                                                     targetCurRow+1,
-                                                     mTargetIpAddrColumn+1)->setProperty("Value", ip);
-                        mTargetSheet->querySubObject("Cells(int,int)",
-                                                     targetCurRow+1,
-                                                     mTargetNetmaskColumn+1)->setProperty("Value", mask);
-                        mTargetSheet->querySubObject("Cells(int,int)",
-                                                     targetCurRow+1,
-                                                     mTargetGatewayColumn+1)->setProperty("Value", gateway);
+                            // 拷贝配置
+                            mTargetSheet->querySubObject("Cells(int,int)",
+                                                         targetCurRow+1,
+                                                         mTargetIpAddrColumn+1)->setProperty("Value", ip);
+                            mTargetSheet->querySubObject("Cells(int,int)",
+                                                         targetCurRow+1,
+                                                         mTargetNetmaskColumn+1)->setProperty("Value", mask);
+                            mTargetSheet->querySubObject("Cells(int,int)",
+                                                         targetCurRow+1,
+                                                         mTargetGatewayColumn+1)->setProperty("Value", gateway);
+                            appendRow(GET_ACTION_COPY_FILE_STR(searchUnit),
+                                      STATUS_SUCCESS_STR,
+                                      "");
+                        }
                         isFound = true;
-                        appendRow(GET_ACTION_COPY_FILE_STR(searchUnit),
-                                  STATUS_SUCCESS_STR,
-                                  "");
                         break;
                 }
             }

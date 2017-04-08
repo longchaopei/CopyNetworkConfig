@@ -85,7 +85,7 @@ CoverInfoDialog::initAfterTableview()
 {
     //设置首行标题
     QStringList headerList;
-    headerList << "编号" << "区划名称" << "区划代码" << "IP地址" << "IP网关" << "IP掩码";
+    headerList << "编号" << "区划名称" << "区划代码" << "IP地址" << "IP掩码" << "IP网关";
 
     mAfterModel = new TableModel(0, headerList.size());
     ui->afterCoverTableview->setModel(mAfterModel);
@@ -152,9 +152,9 @@ CoverInfoDialog::beforeTableAppendRow(const COUNTRY_INFO before)
 {
     ALOGD("before zoningname = %s,"
           "zoningcode = %s,"
-          "ip = %s,"
-          "netmask = %s,"
-          "gateway = %s",
+          "ip = [%s],"
+          "netmask = [%s],"
+          "gateway = [%s]",
           before.countryName.toStdString().data(),
           before.zoningCode.toStdString().data(),
           before.ipAddr.toStdString().data(),
@@ -171,9 +171,9 @@ CoverInfoDialog::afterTableAppendRow(const COUNTRY_INFO after)
 {
     ALOGD("after zoningname = %s,"
           "zoningcode = %s,"
-          "ip = %s,"
-          "netmask = %s,"
-          "gateway = %s",
+          "ip = [%s],"
+          "netmask = [%s],"
+          "gateway = [%s]",
           after.countryName.toStdString().data(),
           after.zoningCode.toStdString().data(),
           after.ipAddr.toStdString().data(),
