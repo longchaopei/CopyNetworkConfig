@@ -7,8 +7,11 @@
 #include <QMessageBox>
 #include <helpdialog.h>
 #include <versiondialog.h>
+#include <coverinfodialog.h>
 #include <QTime>
 
+#define LOG_TAG                         "MAIN_WINDOW"
+#include "utils/Log.h"
 //#define IS_DEBUG
 
 #define HEADER_STR_SRC_TOWNSHIP         "乡镇"
@@ -37,6 +40,7 @@
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
+    mCoverInfoDialog(new CoverInfoDialog()),
     curRow(1),
     isStartCopy(false),
     mVersionDialog(new VersionDialog()),
@@ -49,6 +53,15 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     this->setWindowTitle("CopyNetworkConfig");
     initView();
+
+    connect(this, SIGNAL(clearCoverInfoTable()),
+            mCoverInfoDialog, SLOT(clearTable()));
+
+    connect(this, SIGNAL(coverInfoTableAppendRow(COUNTRY_INFO, COUNTRY_INFO)),
+            mCoverInfoDialog, SLOT(appendRow(COUNTRY_INFO,COUNTRY_INFO)));
+
+    connect(this, SIGNAL(openCoverDialogSignal()),
+            mCoverInfoDialog, SLOT(openWindow()));
 }
 
 MainWindow::~MainWindow()
@@ -113,6 +126,8 @@ MainWindow::setViewVisible(bool isVisible)
     ui->srcFileToolBtn->setEnabled(isVisible);
     ui->targetFileToolBtn->setEnabled(isVisible);
     ui->startBtn->setEnabled(isVisible);
+    ui->countryNameRB->setEnabled(isVisible);
+    ui->zoningCodeRB->setEnabled(isVisible);
 }
 
 void
@@ -185,6 +200,7 @@ void
 MainWindow::mainCopy()
 {
     clearTableView();
+    emit clearCoverInfoTable();
     QList<QList<QVariant>> srcDatas;
     appendRow("开始任务", STATUS_SUCCESS_STR, "");
     setViewVisible(false);
@@ -226,6 +242,15 @@ bool MainWindow::initSrcColumns(QList<QList<QVariant>> &datas)
         return false;
     }
 
+    if (ui->zoningCodeRB->isChecked()) {
+        mSrcZoningCodeColumn = datas.at(mHeaderRow)
+                .indexOf(HEADER_STR_TARGET_ZONING_CODE);
+        if (mSrcZoningCodeColumn < 0)
+            return false;
+    } else {
+        qDebug() << "mSrcZoningCodeColumn = " << mSrcZoningCodeColumn;
+    }
+
     qDebug() << "mSrcTownShipColumn = " << mSrcTownShipColumn << ", "
              << "mSrcVillageColumn = " << mSrcVillageColumn << ", "
              << "mSrcIpAddrColumn = " << mSrcIpAddrColumn << ", "
@@ -237,7 +262,7 @@ bool MainWindow::initSrcColumns(QList<QList<QVariant>> &datas)
 
 bool MainWindow::initTargetColumns(QList<QList<QVariant>> &datas)
 {
-    mZoningNameColumn =
+    mTargetZoningNameColumn =
             datas.at(mHeaderRow).indexOf(HEADER_STR_TARGET_ZONING_NAME);
     mTargetIpAddrColumn =
             datas.at(mHeaderRow).indexOf(HEADER_STR_TARGET_IP_ADDR);
@@ -245,14 +270,23 @@ bool MainWindow::initTargetColumns(QList<QList<QVariant>> &datas)
             datas.at(mHeaderRow).indexOf(HEADER_STR_TARGET_GATEWAY);
     mTargetNetmaskColumn =
             datas.at(mHeaderRow).indexOf(HEADER_STR_TARGET_NETMASK);
-    if (mZoningNameColumn < 0 ||
+    if (mTargetZoningNameColumn < 0 ||
             mTargetIpAddrColumn < 0 ||
             mTargetGatewayColumn < 0 ||
             mTargetNetmaskColumn < 0) {
         return false;
     }
 
-    qDebug() << "mZoningNameColumn = " << mZoningNameColumn << ", "
+    if (ui->zoningCodeRB->isChecked()) {
+        mTargetZoningCodeColumn = datas.at(mHeaderRow)
+                .indexOf(HEADER_STR_TARGET_ZONING_CODE);
+        if (mTargetZoningCodeColumn < 0)
+            return false;
+    } else {
+        qDebug() << "mTargetZoningCodeColumn = " << mTargetZoningCodeColumn;
+    }
+
+    qDebug() << "mTargetZoningNameColumn = " << mTargetZoningNameColumn << ", "
              << "mTargetIpAddrColumn = " << mTargetIpAddrColumn << ", "
              << "mTargetGatewayColumn = " << mTargetGatewayColumn << ", "
              << "mTargetNetmaskColumn = " << mTargetNetmaskColumn;
@@ -362,20 +396,33 @@ MainWindow::write(QList<QList<QVariant>> &datas)
 #endif
         QString searchUnit = "";
         QString targetUnit = "";
+        QString targetIp = "";
+        QString targetNetmask = "";
+        QString targetGateWay = "";
         QString ip, mask, gateway;
+        COUNTRY_INFO before, after;
         bool isFound = false;
         int srcRows = datas.size();
         int targetRows = targetDatas.size();
+        int srcSearchColumn = ui->zoningCodeRB->isChecked() ? mSrcZoningCodeColumn : -1;
+        int targetSearchColumn = ui->zoningCodeRB->isChecked() ? mTargetZoningCodeColumn : mTargetZoningNameColumn;
 
         appendRow(ACTION_START_COPY_STR, "", "");
         for (int srcCurRow = 0; srcCurRow < srcRows; srcCurRow++) {
-            searchUnit = datas.at(srcCurRow).at(mSrcTownShipColumn).toString()
-                    + datas.at(srcCurRow).at(mSrcVillageColumn).toString();
+            if (ui->zoningCodeRB->isChecked())
+                searchUnit = datas.at(srcCurRow).at(srcSearchColumn).toString();
+            else
+                searchUnit = datas.at(srcCurRow).at(mSrcTownShipColumn).toString()
+                        + datas.at(srcCurRow).at(mSrcVillageColumn).toString();
+
             isFound = false;
             for (int targetCurRow = 0;
                  targetCurRow < targetRows;
                  targetCurRow++) {
-                targetUnit = targetDatas.at(targetCurRow).at(mZoningNameColumn).toString();
+                targetUnit = targetDatas.at(targetCurRow).at(targetSearchColumn).toString();
+                targetIp = targetDatas.at(targetCurRow).at(mTargetIpAddrColumn+1).toString();
+                targetNetmask = targetDatas.at(targetCurRow).at(mTargetNetmaskColumn+1).toString();
+                targetGateWay = targetDatas.at(targetCurRow).at(mTargetGatewayColumn+1).toString();
                 if (targetUnit.length() < searchUnit.length())
                     continue;
                 if (searchUnit == targetUnit.mid(0, searchUnit.length())) {
@@ -387,6 +434,21 @@ MainWindow::write(QList<QList<QVariant>> &datas)
                         ip = datas.at(srcCurRow).at(mSrcIpAddrColumn).toString();
                         gateway = datas.at(srcCurRow).at(mSrcGatewayColumn).toString();
                         mask = datas.at(srcCurRow).at(mSrcNetmaskColumn).toString();
+
+                        if (targetIp != "" || targetNetmask != "" || targetGateWay != "") {
+                            before.countryName = after.countryName
+                                    = targetDatas.at(targetCurRow).at(mTargetZoningNameColumn).toString();
+                            before.zoningCode = after.zoningCode
+                                    = targetDatas.at(targetCurRow).at(mTargetZoningCodeColumn).toString();
+                            after.ipAddr = ip;
+                            after.netmask = mask;
+                            after.gateWay = gateway;
+                            before.ipAddr = targetIp;
+                            before.netmask = targetNetmask;
+                            before.gateWay = targetGateWay;
+                            emit coverInfoTableAppendRow(before, after);
+                        }
+
                         mTargetSheet->querySubObject("Cells(int,int)",
                                                      targetCurRow+1,
                                                      mTargetIpAddrColumn+1)->setProperty("Value", ip);
@@ -480,14 +542,22 @@ MainWindow::delaymsec(int msec)
 #endif
 }
 
-void MainWindow::on_actHelp_triggered()
+void
+MainWindow::on_actHelp_triggered()
 {
     if (!isStartCopy)
         mHelpDialog->exec();
 }
 
-void MainWindow::on_actAbout_triggered()
+void
+MainWindow::on_actAbout_triggered()
 {
     if (!isStartCopy)
         mVersionDialog->exec();
+}
+
+void
+MainWindow::on_lookupInfoBtn_clicked()
+{
+    emit openCoverDialogSignal();
 }

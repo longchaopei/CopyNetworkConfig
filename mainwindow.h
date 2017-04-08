@@ -2,12 +2,14 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include "datatype.h"
 
 class QFileDialog;
 class TableModel;
 class QAxObject;
 class HelpDialog;
 class VersionDialog;
+class CoverInfoDialog;
 
 namespace Ui {
 class MainWindow;
@@ -27,17 +29,22 @@ signals:
     void            appendRowSignal(QString action,
                                     QString stat,
                                     QString err);
+    void            coverInfoTableAppendRow(const COUNTRY_INFO, const COUNTRY_INFO);
+    void            clearCoverInfoTable();
+    void            openCoverDialogSignal();
 
 private slots:
-    void on_startBtn_clicked();
+    void            on_startBtn_clicked();
 
-    void on_srcFileToolBtn_clicked();
+    void            on_srcFileToolBtn_clicked();
 
-    void on_targetFileToolBtn_clicked();
+    void            on_targetFileToolBtn_clicked();
 
-    void on_actHelp_triggered();
+    void            on_actHelp_triggered();
 
-    void on_actAbout_triggered();
+    void            on_actAbout_triggered();
+
+    void            on_lookupInfoBtn_clicked();
 
 private:
     /**
@@ -75,6 +82,7 @@ private:
     TableModel*     mModel;
     HelpDialog*     mHelpDialog;
     VersionDialog*  mVersionDialog;
+    CoverInfoDialog* mCoverInfoDialog;
 
     QString         mSourceFilePath;
     QString         mTargetFilePath;
@@ -86,8 +94,9 @@ private:
     int             mSrcIpAddrColumn;
     int             mSrcNetmaskColumn;
     int             mSrcGatewayColumn;
-    int             mZoningNameColumn;
-    int             mZoningCodeColumn;
+    int             mSrcZoningCodeColumn;
+    int             mTargetZoningNameColumn;
+    int             mTargetZoningCodeColumn;
     int             mTargetIpAddrColumn;
     int             mTargetNetmaskColumn;
     int             mTargetGatewayColumn;

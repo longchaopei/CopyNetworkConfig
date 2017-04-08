@@ -16,16 +16,21 @@ TEMPLATE = app
 SOURCES += main.cpp\
         mainwindow.cpp \
     helpdialog.cpp \
-    versiondialog.cpp
+    versiondialog.cpp \
+    coverinfodialog.cpp
 
 HEADERS  += mainwindow.h \
     tablemodel.h \
     helpdialog.h \
-    versiondialog.h
+    versiondialog.h \
+    datatype.h \
+    utils/Log.h \
+    coverinfodialog.h
 
 FORMS    += mainwindow.ui \
     helpdialog.ui \
-    versiondialog.ui
+    versiondialog.ui \
+    coverinfodialog.ui
 
 RESOURCES += \
     icon.qrc
