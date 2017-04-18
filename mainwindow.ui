@@ -136,7 +136,7 @@
           </size>
          </property>
          <property name="text">
-          <string>开始拷贝</string>
+          <string>开始</string>
          </property>
         </widget>
        </item>
@@ -171,7 +171,7 @@
         <number>0</number>
        </property>
        <property name="rightMargin">
-        <number>0</number>
+        <number>20</number>
        </property>
        <property name="bottomMargin">
         <number>0</number>
@@ -180,13 +180,13 @@
         <widget class="QGroupBox" name="groupBox">
          <property name="minimumSize">
           <size>
-           <width>200</width>
+           <width>250</width>
            <height>0</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>200</width>
+           <width>250</width>
            <height>16777215</height>
           </size>
          </property>
@@ -208,6 +208,32 @@
            <widget class="QRadioButton" name="countryNameRB">
             <property name="text">
              <string>站点名称</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QRadioButton" name="tempFunctionRB">
+            <property name="text">
+             <string>临时功能</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="tempFunctionGB">
+         <property name="title">
+          <string>临时功能</string>
+         </property>
+         <layout class="QHBoxLayout" name="horizontalLayout_6">
+          <item>
+           <widget class="QRadioButton" name="delSurplusRB">
+            <property name="text">
+             <string>删除多余设备项</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
             </property>
            </widget>
           </item>
@@ -257,7 +283,14 @@
     <addaction name="actHelp"/>
     <addaction name="actAbout"/>
    </widget>
+   <widget class="QMenu" name="menu_2">
+    <property name="title">
+     <string>操作</string>
+    </property>
+    <addaction name="actionImportVpnConf"/>
+   </widget>
    <addaction name="menu"/>
+   <addaction name="menu_2"/>
   </widget>
   <widget class="QToolBar" name="mainToolBar">
    <attribute name="toolBarArea">
@@ -276,6 +309,11 @@
   <action name="actAbout">
    <property name="text">
     <string>关于</string>
+   </property>
+  </action>
+  <action name="actionImportVpnConf">
+   <property name="text">
+    <string>批量添加VPN配置</string>
    </property>
   </action>
  </widget>

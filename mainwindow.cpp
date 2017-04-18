@@ -9,6 +9,8 @@
 #include <versiondialog.h>
 #include <coverinfodialog.h>
 #include <QTime>
+#include <exceloperate.h>
+#include <vpndialog.h>
 
 #define LOG_TAG                         "MAIN_WINDOW"
 #include "utils/Log.h"
@@ -43,6 +45,7 @@ MainWindow::MainWindow(QWidget *parent) :
     mCoverInfoDialog(new CoverInfoDialog()),
     curRow(1),
     isStartCopy(false),
+    mVpnDialog(new VpnDialog()),
     mVersionDialog(new VersionDialog()),
     mHelpDialog(new HelpDialog()),
     mFileDialog(new QFileDialog()),
@@ -53,6 +56,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->setupUi(this);
     this->setWindowTitle("CopyNetworkConfig");
     initView();
+    ui->tempFunctionRB->setVisible(false);
 
     connect(this, SIGNAL(clearCoverInfoTable()),
             mCoverInfoDialog, SLOT(clearTable()));
@@ -62,6 +66,9 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(this, SIGNAL(openCoverDialogSignal()),
             mCoverInfoDialog, SLOT(openWindow()));
+
+    connect(this, SIGNAL(openVpnDialog()),
+            mVpnDialog, SLOT(openWindow()));
 }
 
 MainWindow::~MainWindow()
@@ -107,20 +114,25 @@ MainWindow::initView()
     ui->logTableView->setStyleSheet(
                 "QTableWidget{background-color:rgb(250, 250, 250);"
                 "alternate-background-color:rgb(255, 255, 224);}");     //设置间隔行颜色变化
+
+    if (!ui->tempFunctionGB->isChecked())
+        ui->tempFunctionGB->setVisible(false);
 }
 
 void
 MainWindow::clearTableView()
 {
-    mModel->clear();
-    QStringList headerList;
-    headerList << "序号" << "动作" << "状态" << "错误信息";
-    mModel->setHorizontalHeaderLabels(headerList);
-    // 行宽
-    ui->logTableView->setColumnWidth(1, 300);
-    ui->logTableView->setColumnWidth(3, 300);
-    ui->logTableView->horizontalHeader()
-            ->setSectionResizeMode(3, QHeaderView::Stretch);
+//    mModel->clear();
+    if (mModel->rowCount() > 0)
+        mModel->removeRows(0, mModel->rowCount());
+//    QStringList headerList;
+//    headerList << "序号" << "动作" << "状态" << "错误信息";
+//    mModel->setHorizontalHeaderLabels(headerList);
+//    // 行宽
+//    ui->logTableView->setColumnWidth(1, 300);
+//    ui->logTableView->setColumnWidth(3, 300);
+//    ui->logTableView->horizontalHeader()
+//            ->setSectionResizeMode(3, QHeaderView::Stretch);
     curRow = 1;
 }
 
@@ -182,7 +194,12 @@ void MainWindow::on_startBtn_clicked()
                               QMessageBox::Ok);
         return;
     }
-    mainCopy();
+    if (ui->tempFunctionRB->isChecked()) {
+        dotemplateFunction();
+    } else {
+        mainCopy();
+    }
+
 }
 
 bool
@@ -203,6 +220,40 @@ MainWindow::assertFile(QString path)
 }
 
 void
+MainWindow::dotemplateFunction()
+{
+    if (ui->delSurplusRB->isChecked()) {
+        delTaregtSurplusItem();
+    }
+}
+
+void
+MainWindow::delTaregtSurplusItem()
+{
+    if (!assertFile(mSourceFilePath))
+        return;
+
+    QList<QList<QVariant>> srcDatas;
+    int ret = ExcelOperate::readSheet(mSourceFilePath, srcDatas);
+    ALOGD("%s, ret = %d", __FUNCTION__, ret);
+    QAxObject srcExcel("Excel.Application");
+    srcExcel.setProperty("Visible", false);                             //不显示文档
+    srcExcel.querySubObject("WorkBooks")
+            ->dynamicCall("Open (const QString&)", mSourceFilePath);
+    mSrcWorkBook = srcExcel.querySubObject("ActiveWorkBook");           //获取活动工作簿
+    mSrcSheet = mSrcWorkBook->querySubObject("Worksheets(int)", 1);     //获取第一个表
+    mSrcRange = mSrcSheet->querySubObject("Range(const QString&)", QString("A2"));
+//    mSrcRange = mSrcSheet->querySubObject("Range(A2:I2)");
+    mSrcRange->dynamicCall("Clear()");
+    mSrcSheet->dynamicCall("Rows(int).Delete", 5);
+    mSrcRange->dynamicCall("SetValue(const QVariant&)", QVariant(5));
+    srcExcel.dynamicCall("SetScreenUpdating(bool)", true);
+//    QVariant vars = mSrcRange->dynamicCall("Value");                    //获取整表数据
+    mSrcWorkBook->dynamicCall("Close(Boolean)", false);                 //关闭表
+    srcExcel.dynamicCall("Quit(void)");                                 //释放excel
+}
+
+void
 MainWindow::mainCopy()
 {
     clearTableView();
@@ -211,7 +262,7 @@ MainWindow::mainCopy()
     appendRow("开始任务", STATUS_SUCCESS_STR, "");
     setViewVisible(false);
     isStartCopy = true;
-    for (int i = 0; i < 100000000; i++);
+//    for (int i = 0; i < 100000000; i++);
     read(srcDatas);
     if (!initSrcColumns(srcDatas)) {
         QString errLog = "文件[" + mSourceFilePath + "] 表头格式错误";
@@ -228,7 +279,8 @@ MainWindow::mainCopy()
     setViewVisible(true);
 }
 
-bool MainWindow::initSrcColumns(QList<QList<QVariant>> &datas)
+bool
+MainWindow::initSrcColumns(QList<QList<QVariant>> &datas)
 {
     mSrcTownShipColumn =
             datas.at(mHeaderRow).indexOf(HEADER_STR_SRC_TOWNSHIP);
@@ -580,4 +632,23 @@ MainWindow::closeEvent(QCloseEvent *event)
                              QMessageBox::Ok,
                              QMessageBox::Ok);
     }
+}
+
+void
+MainWindow::on_actionImportVpnConf_triggered()
+{
+    ALOGDTRACE();
+    if (!isStartCopy)
+        emit openVpnDialog();
+}
+
+void
+MainWindow::on_tempFunctionRB_toggled(bool checked)
+{
+    ALOGDTRACE();
+    qDebug() << checked;
+    if (checked)
+        ui->tempFunctionGB->setVisible(true);
+    else
+        ui->tempFunctionGB->setVisible(false);
 }

@@ -10,6 +10,7 @@ class QAxObject;
 class HelpDialog;
 class VersionDialog;
 class CoverInfoDialog;
+class VpnDialog;
 
 namespace Ui {
 class MainWindow;
@@ -23,6 +24,7 @@ public:
     explicit MainWindow(QWidget *parent = 0);
     ~MainWindow();
 
+    const static int mHeaderRow = 0;
     enum CopyStatus {COPY_SUCCESS, COPY_FAIL, COPY_UNKNOWN_ERR};
 
 signals:
@@ -32,6 +34,7 @@ signals:
     void            coverInfoTableAppendRow(const COUNTRY_INFO, const COUNTRY_INFO);
     void            clearCoverInfoTable();
     void            openCoverDialogSignal();
+    void            openVpnDialog();
 
 private slots:
     void            on_startBtn_clicked();
@@ -46,6 +49,10 @@ private slots:
 
     void            on_lookupInfoBtn_clicked();
 
+    void on_actionImportVpnConf_triggered();
+
+    void on_tempFunctionRB_toggled(bool checked);
+
 private:
     /**
      * @brief 初始化界面
@@ -54,9 +61,21 @@ private:
     void            clearTableView();
     void            setViewVisible(bool isVisible);
     /**
+     * @brief 判断文件是否有效
+     */
+    bool            assertFile(QString path);
+    /**
      * @brief 主拷贝函数
      */
     void            mainCopy();
+    /**
+     * @brief 临时功能
+     */
+    void            dotemplateFunction();
+    /**
+     * @brief 删除多余项
+     */
+    void            delTaregtSurplusItem();
     /**
      * @brief 读excel
      */
@@ -65,10 +84,6 @@ private:
      * @brief 写excel
      */
     void            write(QList<QList<QVariant>> &datas);
-    /**
-     * @brief 判断文件是否有效
-     */
-    bool            assertFile(QString path);
 
     QString         getCopyStatusStr(CopyStatus stat);
     void            appendRow(QString action,
@@ -85,6 +100,7 @@ private:
     HelpDialog*     mHelpDialog;
     VersionDialog*  mVersionDialog;
     CoverInfoDialog* mCoverInfoDialog;
+    VpnDialog*      mVpnDialog;
 
     QString         mSourceFilePath;
     QString         mTargetFilePath;
@@ -102,7 +118,6 @@ private:
     int             mTargetIpAddrColumn;
     int             mTargetNetmaskColumn;
     int             mTargetGatewayColumn;
-    const static int mHeaderRow = 0;
 
     //excel操作
     QAxObject*      mSrcWorkBook;

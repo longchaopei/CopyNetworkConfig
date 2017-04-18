@@ -17,7 +17,10 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     helpdialog.cpp \
     versiondialog.cpp \
-    coverinfodialog.cpp
+    coverinfodialog.cpp \
+    exceloperate.cpp \
+    vpndialog.cpp \
+    waitdialog.cpp
 
 HEADERS  += mainwindow.h \
     tablemodel.h \
@@ -25,12 +28,17 @@ HEADERS  += mainwindow.h \
     versiondialog.h \
     datatype.h \
     utils/Log.h \
-    coverinfodialog.h
+    coverinfodialog.h \
+    exceloperate.h \
+    vpndialog.h \
+    waitdialog.h
 
 FORMS    += mainwindow.ui \
     helpdialog.ui \
     versiondialog.ui \
-    coverinfodialog.ui
+    coverinfodialog.ui \
+    vpndialog.ui \
+    waitdialog.ui
 
 RESOURCES += \
     icon.qrc
