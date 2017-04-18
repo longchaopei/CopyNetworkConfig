@@ -25,6 +25,7 @@
 
 VpnDialog::VpnDialog(QWidget *parent) :
     QDialog(parent),
+    isStart(false),
     mWaitDialog(new WaitDialog()),
     mFileDialog(new QFileDialog()),
     ui(new Ui::VpnDialog)
@@ -251,10 +252,11 @@ VpnDialog::insertVpnSetting(const QList<QList<QVariant>> srcVillageDatas,
 {
     ALOGDTRACE();
 
+    int     vpnCount = 1;
     QString villageIp;
     QString villageSubNet;
     QString villageSubNetmask;
-    QString vpnStr;
+    QString vpnStr = "";
     QString ipRouteStr;
     QString countrySubNet =
             srcCountryDatas.at(1).at(mCountrySubnetColumn).toString() == "" ?
@@ -273,15 +275,77 @@ VpnDialog::insertVpnSetting(const QList<QList<QVariant>> srcVillageDatas,
         if (villageIp == "" || villageSubNet == "" || villageSubNetmask == "")
             continue;
 
-        ALOGD("row[%d] villageIp = %s, villageSubNet = %s, villageSubNetmask = %s,"
-              "countrySubNet = %s, countrySubNetmask = %s\n",
-              pos,
-              villageIp.toStdString().data(),
-              villageSubNet.toStdString().data(),
-              villageSubNetmask.toStdString().data(),
-              countrySubNet.toStdString().data(),
-              countrySubNetmask.toStdString().data());
-    }
+//        ALOGD("row[%d] villageIp = %s, villageSubNet = %s, villageSubNetmask = %s,"
+//              "countrySubNet = %s, countrySubNetmask = %s\n",
+//              pos,
+//              villageIp.toStdString().data(),
+//              villageSubNet.toStdString().data(),
+//              villageSubNetmask.toStdString().data(),
+//              countrySubNet.toStdString().data(),
+//              countrySubNetmask.toStdString().data());
 
-    emit openWaitDialog();
+//        ALOGD("============================== %d ===================================\n", vpnCount);
+        vpnStr = "";
+        vpnStr.append("!\n");
+        vpnStr.append("address vpn").append(QString::number(vpnCount)).append("_ipsec_src\n");
+        vpnStr.append("!\n");
+        vpnStr.append(" net-address ").append(countrySubNet).append("/24\n");
+        vpnStr.append("!\n");
+        vpnStr.append("address vpn").append(QString::number(vpnCount)).append("_ipsec_dst\n");
+        vpnStr.append("!\n");
+        vpnStr.append(" net-address ").append(villageSubNet).append("/19\n");
+        vpnStr.append("!\n");
+        vpnStr.append("vpn ipsec phase1\n");
+        vpnStr.append("    edit gateway ").append("vpn").append(QString::number(vpnCount)).append("\n");
+        vpnStr.append("      set interface ge0\n");
+        vpnStr.append("      set fwid ").append(QString::number(vpnCount)).append("\n");
+        vpnStr.append("      set enable on\n");
+        vpnStr.append("      set mode aggressive\n");
+        vpnStr.append("      set remotegw ").append(villageIp).append("\n");
+        vpnStr.append("      authentication pre-share\n");
+        vpnStr.append("      set preshared-key secret kTgxl5p34DqlzzT+XZ0R14cv6Qal7urj9YogDjQGHYyVxSLYIpmOxTPwro4b0aN\n");
+        vpnStr.append("      lifetime 10800\n");
+        vpnStr.append("      set dpd 10 3\n");
+        vpnStr.append("      group 2\n");
+        vpnStr.append("      set policy 1\n");
+        vpnStr.append("         encrypt 3des\n");
+        vpnStr.append("         hash sha\n");
+        vpnStr.append("         exit\n");
+        vpnStr.append("      set policy 2\n");
+        vpnStr.append("         encrypt 3des\n");
+        vpnStr.append("         hash md5\n");
+        vpnStr.append("         exit\n");
+        vpnStr.append("      set policy 3\n");
+        vpnStr.append("         encrypt des\n");
+        vpnStr.append("         hash sha\n");
+        vpnStr.append("         exit\n");
+        vpnStr.append("      set src-net-type net\n");
+        vpnStr.append("      set dst-net-type net\n");
+        vpnStr.append("      no set template-recon\n");
+        vpnStr.append("      set del-redundant-sa on\n");
+        vpnStr.append("!\n");
+        vpnStr.append("vpn ipsec phase2\n");
+        vpnStr.append("   edit tunnel vpn").append(QString::number(vpnCount)).append("\n");
+        vpnStr.append("      set peer vpn").append(QString::number(vpnCount)).append("\n");
+        vpnStr.append("      mode tunnel\n");
+        vpnStr.append("      set lifetime seconds 3600\n");
+        vpnStr.append("      set lifetime kilobytes 1843200\n");
+        vpnStr.append("      set proposal1 esp-3des-sha1 ah-null\n");
+        vpnStr.append("!\n");
+        vpnStr.append("policy ipsec          ")
+                .append(QString::number(vpnCount))
+                .append(" any ge0 ")
+                .append("vpn").append(QString::number(vpnCount)).append("_ipsec_src ")
+                .append("vpn").append(QString::number(vpnCount)).append("_ipsec_dst any always permit\n");
+        vpnStr.append(" enable\n");
+        vpnStr.append("vpn ").append("vpn").append(QString::number(vpnCount)).append("\n");
+        vpnStr.append(" ipsec dial-interval 30\n");
+        vpnStr.append("!\n");
+        vpnStr.append("ip route ").append(villageSubNet).append("/19 ").append(villageIp).append("\n");
+        vpnStr.append("!");
+        vpnCount++;
+        qDebug("%s", vpnStr.toStdString().data());
+//        ALOGD("\n%s", vpnStr.toStdString().data());
+//        ALOGD("=================================================================\n");
+    }
 }
